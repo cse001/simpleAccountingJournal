@@ -1,9 +1,6 @@
 <?php
-$debit = 5000;
-$credit = 3000;
-$balance = $credit - $debit;
+$pdo = new PDO('sqlite:databases/journal.db');
 ?>
-
 <html>
 <html lang="en">
 
@@ -39,7 +36,7 @@ $balance = $credit - $debit;
         <h1>Transaction Dashboard</h1>
         <button class="new-record" id="openModalBtn">Add New Record</button>
 
-        <div id="myModal" class="modal">
+        <div id="myModal" class="modal-overlay">
           <div class="modal-content">
             <span class="close" id="closeModalBtn">&times;</span>
             <h2>Add Transaction Record</h2>
@@ -96,32 +93,59 @@ $balance = $credit - $debit;
         </script>
 
       </div>
+      <?php
+      $stmt_credit = $pdo->query("SELECT SUM(amount) AS credit_sum FROM transactions WHERE type = 'Credit'");
+      $credit_sum = $stmt_credit->fetchColumn();
+      $stmt_debit = $pdo->query("SELECT SUM(amount) AS debit_sum FROM transactions WHERE type = 'Debit'");
+      $debit_sum = $stmt_debit->fetchColumn();
+      $credit_sum = $credit_sum ?: 0;
+      $debit_sum = $debit_sum ?: 0;
+      ?>
       <h3>Account Summary</h3>
       <div class="summary">
         <div class="card">
           <span class="material-symbols-outlined">payments</span>
           <div class="text-content">
             <p>Debits</p>
-            <h2><?php echo "SAR " . $debit ?></h2>
+            <h2>SAR <?php echo $debit_sum?></h2>
           </div>
         </div>
         <div class="card">
           <span class="material-symbols-outlined">paid</span>
           <div class="text-content">
             <p>Credits</p>
-            <h2><?php echo "SAR " . $credit ?></h2>
+            <h2>SAR <?php echo $credit_sum?></h2>
           </div>
         </div>
         <div class="card">
           <span class="material-symbols-outlined">account_balance</span>
           <div class="text-content">
             <p>Balance</p>
-            <h2><?php echo "SAR " . $balance ?></h2>
+            <h2>SAR <?php echo $credit_sum - $debit_sum?></h2>
           </div>
         </div>
       </div>
 
       <div class="table-container">
+
+        <?php
+
+        $records_per_page = 20;
+
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+
+        $offset = ($page - 1) * $records_per_page;
+
+        $stmt = $pdo->query("SELECT COUNT(*) FROM transactions");
+        $total_records = $stmt->fetchColumn();
+
+        $total_pages = ceil($total_records / $records_per_page);
+
+        $stmt = $pdo->prepare("SELECT * FROM transactions LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $records_per_page, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        ?>
 
         <table>
           <thead>
@@ -134,22 +158,28 @@ $balance = $credit - $debit;
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Invoiced</td>
-              <td>$1,800</td>
-              <td>$2.00</td>
-              <td>$1,798</td>
-              <td><span class="status debit">Debit</span></td>
-            </tr>
-            <tr>
-              <td>Invoiced</td>
-              <td>$300</td>
-              <td>$0.40</td>
-              <td>$299.60</td>
-              <td><span class="status credit">Credit</span></td>
-            </tr>
+            <?php
+            $counter = $offset + 1;
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+              echo "<tr>";
+              echo "<td>" . $counter . "</td>";
+              echo "<td>" . $row['code'] . "</td>";
+              echo "<td>" . $row['account'] . "</td>";
+              echo "<td>" . $row['amount'] . "</td>";
+              echo "<td>" . $row['type'] . "</td>";
+              echo "</tr>";
+              $counter++;
+            } ?>
           </tbody>
         </table>
+        <div class="pagination">
+          <?php if ($page > 1): ?>
+            <a href="?page=<?php echo $page - 1; ?>">Previous</a>
+          <?php endif; ?>
+          <?php if ($page < $total_pages): ?>
+            <a href="?page=<?php echo $page + 1; ?>">Next</a>
+          <?php endif; ?>
+        </div>
 
       </div>
     </main>
