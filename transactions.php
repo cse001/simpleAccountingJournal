@@ -40,31 +40,47 @@ $pdo = new PDO('sqlite:databases/journal.db');
           <div class="modal-content">
             <span class="close" id="closeModalBtn">&times;</span>
             <h2>Add Transaction Record</h2>
-            <form id="dataForm" method="POST">
 
-              <br><label for="code">Code:</label>
+            <?php
+            if (isset($_POST['submit'])) {
+              $pdo = new PDO('sqlite:databases/journal.db');
+
+              $code = $_POST['code'];
+              $account = $_POST['account'];
+              $amount = $_POST['amount'];
+              $type = $_POST['type'];
+
+              $stmt = $pdo->prepare("INSERT INTO transactions (code, account, amount, type) VALUES (?, ?, ?, ?)");
+              $stmt->execute([$code, $account, $amount, $type]);
+
+              header('Location: transactions.php');
+              exit;
+            }
+            ?>
+
+            <form method="POST" action="transactions.php">
+
+              <br><label>Code:</label>
               <input type="text" name="code" placeholder="Enter your code" required><br><br>
 
-              <label for="account">Account:</label>
+              <label>Account:</label>
               <input type="text" name="account" placeholder="Enter account name" required><br>
 
-              <label for="amount">Amount:</label>
+              <label>Amount:</label>
               <input type="number" name="amount" placeholder="Enter amount" required><br>
 
               <label>Transaction Type:</label><br>
 
               <div class="radio-group">
                 <input type="radio" name="type" value="Debit" required>
-                <label for="python">Debit</label><br>
+                <label>Debit</label><br>
 
                 <input type="radio" name="type" value="Credit" required>
-                <label for="javascript">Credit</label><br>
+                <label>Credit</label><br>
 
               </div>
 
-
-
-              <button type="submit">Submit</button>
+              <button type="submit" name="submit">Submit</button>
               <button type="button" id="cancelBtn">Cancel</button>
 
             </form>
@@ -76,6 +92,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
           var openModalBtn = document.getElementById("openModalBtn");
           var closeModalBtn = document.getElementById("closeModalBtn");
           var cancelBtn = document.getElementById("cancelBtn");
+          modal.style.display = "block";
           openModalBtn.onclick = function() {
             modal.style.display = "block";
           }
@@ -107,21 +124,21 @@ $pdo = new PDO('sqlite:databases/journal.db');
           <span class="material-symbols-outlined">payments</span>
           <div class="text-content">
             <p>Debits</p>
-            <h2>SAR <?php echo $debit_sum?></h2>
+            <h2>SAR <?php echo $debit_sum ?></h2>
           </div>
         </div>
         <div class="card">
           <span class="material-symbols-outlined">paid</span>
           <div class="text-content">
             <p>Credits</p>
-            <h2>SAR <?php echo $credit_sum?></h2>
+            <h2>SAR <?php echo $credit_sum ?></h2>
           </div>
         </div>
         <div class="card">
           <span class="material-symbols-outlined">account_balance</span>
           <div class="text-content">
             <p>Balance</p>
-            <h2>SAR <?php echo $credit_sum - $debit_sum?></h2>
+            <h2>SAR <?php echo $credit_sum - $debit_sum ?></h2>
           </div>
         </div>
       </div>
@@ -165,13 +182,14 @@ $pdo = new PDO('sqlite:databases/journal.db');
               echo "<td>" . $counter . "</td>";
               echo "<td>" . $row['code'] . "</td>";
               echo "<td>" . $row['account'] . "</td>";
-              echo "<td>" . $row['amount'] . "</td>";
-              echo "<td>" . $row['type'] . "</td>";
+              echo "<td>SAR " . $row['amount'] . "</td>";
+              echo "<td><span class=\"status " . $row['type'] . "\">" . $row['type'] . "</span></td>";
               echo "</tr>";
               $counter++;
             } ?>
           </tbody>
         </table>
+
         <div class="pagination">
           <?php if ($page > 1): ?>
             <a href="?page=<?php echo $page - 1; ?>">Previous</a>
