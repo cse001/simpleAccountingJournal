@@ -67,7 +67,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
               <input type="text" name="account" placeholder="Enter account name" required><br>
 
               <label>Amount:</label>
-              <input type="number" name="amount" placeholder="Enter amount" required><br>
+              <input type="floatval" name="amount" placeholder="Enter amount" required><br>
 
               <label>Transaction Type:</label><br>
 
@@ -92,7 +92,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
           var openModalBtn = document.getElementById("openModalBtn");
           var closeModalBtn = document.getElementById("closeModalBtn");
           var cancelBtn = document.getElementById("cancelBtn");
-          modal.style.display = "block";
+
           openModalBtn.onclick = function() {
             modal.style.display = "block";
           }
@@ -124,21 +124,21 @@ $pdo = new PDO('sqlite:databases/journal.db');
           <span class="material-symbols-outlined">payments</span>
           <div class="text-content">
             <p>Debits</p>
-            <h2>SAR <?php echo $debit_sum ?></h2>
+            <h2>SAR <?php echo number_format($debit_sum, 2) ?></h2>
           </div>
         </div>
         <div class="card">
           <span class="material-symbols-outlined">paid</span>
           <div class="text-content">
             <p>Credits</p>
-            <h2>SAR <?php echo $credit_sum ?></h2>
+            <h2>SAR <?php echo number_format($credit_sum, 2) ?></h2>
           </div>
         </div>
         <div class="card">
           <span class="material-symbols-outlined">account_balance</span>
           <div class="text-content">
             <p>Balance</p>
-            <h2>SAR <?php echo $credit_sum - $debit_sum ?></h2>
+            <h2>SAR <?php echo number_format($credit_sum - $debit_sum, 2) ?></h2>
           </div>
         </div>
       </div>
@@ -172,23 +172,65 @@ $pdo = new PDO('sqlite:databases/journal.db');
               <th>Account</th>
               <th>Amount</th>
               <th>Type</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             <?php
             $counter = $offset + 1;
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-              echo "<tr>";
-              echo "<td>" . $counter . "</td>";
-              echo "<td>" . $row['code'] . "</td>";
-              echo "<td>" . $row['account'] . "</td>";
-              echo "<td>SAR " . $row['amount'] . "</td>";
-              echo "<td><span class=\"status " . $row['type'] . "\">" . $row['type'] . "</span></td>";
-              echo "</tr>";
-              $counter++;
-            } ?>
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) { ?>
+            <tr class="row-container">
+              <td><?= $counter ?></td>
+              <td><?= $row['code'] ?></td>
+              <td><?= $row['account'] ?></td>
+              <td><?= number_format($row['amount'], 2) ?></td>
+              <td class="edit-row"><span class="status <?= $row['type'] ?>"><?= $row['type'] ?></span></td>
+                <td><button class="action-btn" onclick="toggleMenu(this)">⋮</button>
+                <div class="dropdown-menu">
+                  <a href="javascript:void(0)" onclick="editRow(<?= $counter ?>)">Edit</a>
+                  <a href="javascript:void(0)" onclick="deleteRow(<?= $counter ?>)">Delete</a>
+                </div>
+              </td>
+              </tr>
+            <?php $counter++; } ?>
           </tbody>
         </table>
+        <script>
+          // Function to toggle dropdown menu for a specific row
+          function toggleMenu(button) {
+            const dropdown = button.nextElementSibling;
+            dropdown.classList.toggle('open');
+
+            // Close other open dropdowns
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+              if (menu !== dropdown) {
+                menu.classList.remove('open');
+              }
+            });
+          }
+
+          // Placeholder for Edit Row functionality
+          function editRow(rowId) {
+            alert(`Edit functionality for row ${rowId}`);
+          }
+
+          // Placeholder for Delete Row functionality
+          function deleteRow(rowId) {
+            const confirmation = confirm(`Are you sure you want to delete row ${rowId}?`);
+            if (confirmation) {
+              alert(`Row ${rowId} deleted!`);
+            }
+          }
+
+          // Close dropdown when clicking outside
+          document.addEventListener("click", function(e) {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+              if (!menu.contains(e.target) && !menu.previousElementSibling.contains(e.target)) {
+                menu.classList.remove('open');
+              }
+            });
+          });
+        </script>
 
         <div class="pagination">
           <?php if ($page > 1): ?>

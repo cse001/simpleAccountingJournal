@@ -101,7 +101,7 @@ nav a.active {
 }
 
 input[type="text"],
-input[type="number"],
+input[type="floatval"],
 textarea {
     width: 100%;
     padding: 8px;
@@ -280,4 +280,61 @@ table th {
 .status.credit {
     background-color: #b4ffc5;
     color: #000;
+}
+
+.action-btn {
+    position: relative;
+    left: 50%;
+    /* top: 50%; */
+    /* transform: translateY(-50%); */
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background-color: transparent;
+    color: black;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.action-btn:hover {
+    background-color: #f7f4f4;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    width: 100px;
+}
+
+.dropdown-menu a {
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: black;
+    font-size: 14px;
+}
+
+.dropdown-menu a:hover {
+    background-color: #f0f0f0;
+}
+
+.dropdown-menu.open {
+    display: block;
+}
+
+.row-container {
+    position: relative;
+}
+
+.edit-row {
+    width: 5%;
 }
