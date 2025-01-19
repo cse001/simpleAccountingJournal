@@ -1,6 +1,7 @@
 <?php
 $pdo = new PDO('sqlite:databases/journal.db');
 ?>
+
 <html>
 <html lang="en">
 
@@ -48,11 +49,18 @@ $pdo = new PDO('sqlite:databases/journal.db');
               $amount = $_POST['amount'];
               $type = $_POST['type'];
 
-              $stmt = $pdo->prepare("INSERT INTO transactions (code, account, amount, type) VALUES (?, ?, ?, ?)");
-              $stmt->execute([$code, $account, $amount, $type]);
+              $stmt = $pdo->prepare("SELECT code FROM transactions");
+              $stmt->execute();
+              $codes = $stmt->fetchAll(PDO::FETCH_COLUMN);
+              
+              if (in_array($code, $codes)) {
+                echo "<script>alert('Given code already exists in the database. Codes shoud be unique. Please try again.')</script>";
+              } else {
+                $stmt = $pdo->prepare("INSERT INTO transactions (code, account, amount, type) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$code, $account, $amount, $type]);
+                header('Location: transactions.php');
+              }
 
-              header('Location: transactions.php');
-              exit;
             }
             ?>
 
@@ -234,6 +242,8 @@ $pdo = new PDO('sqlite:databases/journal.db');
           $stmt = $pdo->prepare("DELETE FROM transactions WHERE code = :code");
           $stmt->bindParam(':code', $code, PDO::PARAM_STR);
           $stmt->execute();
+          header('Location: transactions.php');
+          exit;
         }
         ?>
 
@@ -288,7 +298,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
             var amount = editAmountInput.value.trim() || editAmountInput.placeholder;
 
             var amountFloat = parseFloat(amount);
-            if (isNaN(amountFloat) || amountFloat.toFixed(2) !== amount) {
+            if (isNaN(amountFloat) || !/^\d+(\.\d{1,2})?$/.test(amount)) {
               alert("Amount must be a valid number with up to two decimal places.");
               event.preventDefault();
               return;
