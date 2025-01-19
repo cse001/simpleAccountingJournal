@@ -71,9 +71,11 @@ nav a.active {
     display: none; /* Hidden by default */
     justify-content: center;
     align-items: center;
+    z-index: 9999;
 }
 
 .modal-content {
+    font-family: "Tajawal";
     position: fixed;
     background-color: #fff;
     margin: 15% auto;
@@ -86,22 +88,8 @@ nav a.active {
     transform: translate(-50%, -50%);
 }
 
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-}
-
 input[type="text"],
-input[type="floatval"],
+input[type="number"],
 textarea {
     width: 100%;
     padding: 8px;
@@ -126,31 +114,36 @@ input[type="radio"] {
     cursor: pointer;
 }
 
-button[type="submit"],
-#cancelBtn {
+.button-green{
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-}
-
-button[type="submit"] {
-    background-color: #4CAF50;
     color: white;
+    background-color: #4CAF50;
 }
 
-button[type="submit"]:hover {
+.button-green:hover {
     background-color: #45a049;
 }
 
-#cancelBtn {
-    background-color: #f44336;
+.button-red {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
     color: white;
-    margin-left: 10px;
+    background-color: #f44336;
 }
 
-#cancelBtn:hover {
+.button-red:hover {
     background-color: #da190b;
+}
+
+#cancelBtn,
+#delCancelBtn,
+#editCancelBtn {
+    margin-left: 10px;
 }
 
 .summary {
@@ -285,8 +278,6 @@ table th {
 .action-btn {
     position: relative;
     left: 50%;
-    /* top: 50%; */
-    /* transform: translateY(-50%); */
     width: 24px;
     height: 24px;
     border: none;
@@ -331,10 +322,10 @@ table th {
     display: block;
 }
 
-.row-container {
-    position: relative;
-}
-
 .edit-row {
     width: 5%;
+}
+
+.row-container {
+    position: relative;
 }

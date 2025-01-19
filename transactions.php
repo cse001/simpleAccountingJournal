@@ -36,14 +36,12 @@ $pdo = new PDO('sqlite:databases/journal.db');
         <h1>Transaction Dashboard</h1>
         <button class="new-record" id="openModalBtn">Add New Record</button>
 
-        <div id="myModal" class="modal-overlay">
+        <div id="addModal" class="modal-overlay">
           <div class="modal-content">
-            <span class="close" id="closeModalBtn">&times;</span>
             <h2>Add Transaction Record</h2>
 
             <?php
             if (isset($_POST['submit'])) {
-              $pdo = new PDO('sqlite:databases/journal.db');
 
               $code = $_POST['code'];
               $account = $_POST['account'];
@@ -61,13 +59,13 @@ $pdo = new PDO('sqlite:databases/journal.db');
             <form method="POST" action="transactions.php">
 
               <br><label>Code:</label>
-              <input type="text" name="code" placeholder="Enter your code" required><br><br>
+              <input type="text" name="code" pattern="^[a-zA-Z0-9]+$" placeholder="Enter your code" required><br><br>
 
               <label>Account:</label>
-              <input type="text" name="account" placeholder="Enter account name" required><br>
+              <input type="text" name="account" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter account name" required><br>
 
               <label>Amount:</label>
-              <input type="floatval" name="amount" placeholder="Enter amount" required><br>
+              <input type="number" step="0.01" name="amount" placeholder="Enter amount" required><br>
 
               <label>Transaction Type:</label><br>
 
@@ -80,32 +78,23 @@ $pdo = new PDO('sqlite:databases/journal.db');
 
               </div>
 
-              <button type="submit" name="submit">Submit</button>
-              <button type="button" id="cancelBtn">Cancel</button>
+              <button type="submit" name="submit" class="button-green">Submit</button>
+              <button id="cancelBtn" class="button-red">Cancel</button>
 
             </form>
           </div>
         </div>
 
         <script>
-          var modal = document.getElementById("myModal");
+          var modal = document.getElementById("addModal");
           var openModalBtn = document.getElementById("openModalBtn");
-          var closeModalBtn = document.getElementById("closeModalBtn");
           var cancelBtn = document.getElementById("cancelBtn");
 
           openModalBtn.onclick = function() {
             modal.style.display = "block";
           }
-          closeModalBtn.onclick = function() {
-            modal.style.display = "none";
-          }
           cancelBtn.onclick = function() {
             modal.style.display = "none";
-          }
-          window.onclick = function(event) {
-            if (event.target == modal) {
-              modal.style.display = "none";
-            }
           }
         </script>
 
@@ -148,14 +137,11 @@ $pdo = new PDO('sqlite:databases/journal.db');
         <?php
 
         $records_per_page = 20;
-
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-
         $offset = ($page - 1) * $records_per_page;
 
         $stmt = $pdo->query("SELECT COUNT(*) FROM transactions");
         $total_records = $stmt->fetchColumn();
-
         $total_pages = ceil($total_records / $records_per_page);
 
         $stmt = $pdo->prepare("SELECT * FROM transactions LIMIT :limit OFFSET :offset");
@@ -179,50 +165,168 @@ $pdo = new PDO('sqlite:databases/journal.db');
             <?php
             $counter = $offset + 1;
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) { ?>
-            <tr class="row-container">
-              <td><?= $counter ?></td>
-              <td><?= $row['code'] ?></td>
-              <td><?= $row['account'] ?></td>
-              <td><?= number_format($row['amount'], 2) ?></td>
-              <td class="edit-row"><span class="status <?= $row['type'] ?>"><?= $row['type'] ?></span></td>
+              <tr class="row-container">
+                <td><?= $counter ?></td>
+                <td><?= $row['code'] ?></td>
+                <td><?= $row['account'] ?></td>
+                <td><?= number_format($row['amount'], 2) ?></td>
+                <td class="edit-row"><span class="status <?= $row['type'] ?>"><?= $row['type'] ?></span></td>
                 <td><button class="action-btn" onclick="toggleMenu(this)">⋮</button>
-                <div class="dropdown-menu">
-                  <a href="javascript:void(0)" onclick="editRow(<?= $counter ?>)">Edit</a>
-                  <a href="javascript:void(0)" onclick="deleteRow(<?= $counter ?>)">Delete</a>
-                </div>
-              </td>
+                  <div class="dropdown-menu">
+                    <a onclick="editRow('<?= $row['code'] . '\',\'' . $row['account'] . '\',\'' . $row['amount'] . '\',\'' . $row['type'] ?>')">Edit</a>
+                    <a onclick="deleteRow('<?= $row['code'] ?>')">Delete</a>
+                  </div>
+                </td>
               </tr>
-            <?php $counter++; } ?>
+            <?php $counter++;
+            } ?>
           </tbody>
         </table>
+
+        <div id="editModal" class="modal-overlay">
+          <div class="modal-content">
+
+
+            <h2></h2>
+
+            <?php
+            if (isset($_POST['editCode'])) {
+
+              $code = $_POST['editCode'];
+              $account = $_POST['account'];
+              $amount = $_POST['amount'];
+              $type = $_POST['type'];
+
+              $stmt = $pdo->prepare("UPDATE transactions SET account = ?, amount = ?, type = ? WHERE code = ?");
+              $stmt->execute([$account, $amount, $type, $code]);
+
+              header('Location: transactions.php');
+              exit;
+            }
+            ?>
+
+            <label>Account:</label>
+            <input type="text" id="editAccount"><br>
+
+            <label>Amount:</label>
+            <input type="number" id="editAmount"><br>
+
+            <label>Transaction Type:</label><br>
+
+            <div class="radio-group">
+              <input type="radio" name="editType" value="Debit" required>
+              <label>Debit</label><br>
+
+              <input type="radio" name="editType" value="Credit" required>
+              <label>Credit</label><br>
+
+            </div>
+
+            <button id="editSubmitBtn" class="button-green">Submit</button>
+            <button type="button" id="editCancelBtn" class="button-red">Cancel</button>
+
+          </div>
+        </div>
+
+        <?php
+        if (isset($_POST['delCode'])) {
+          $code = $_POST['delCode'];
+          $stmt = $pdo->prepare("DELETE FROM transactions WHERE code = :code");
+          $stmt->bindParam(':code', $code, PDO::PARAM_STR);
+          $stmt->execute();
+        }
+        ?>
+
+        <div id="delModal" class="modal-overlay">
+          <div class="modal-content">
+            <h3></h3>
+            <button id="delSubmitBtn" class="button-red">Yes, Delete</button>
+            <button id="delCancelBtn" class="button-green">Cancel</button>
+          </div>
+        </div>
+
         <script>
-          // Function to toggle dropdown menu for a specific row
           function toggleMenu(button) {
             const dropdown = button.nextElementSibling;
-            dropdown.classList.toggle('open');
-
-            // Close other open dropdowns
-            document.querySelectorAll('.dropdown-menu').forEach(menu => {
-              if (menu !== dropdown) {
-                menu.classList.remove('open');
-              }
-            });
+            dropdown.classList.toggle('open');;
           }
 
-          // Placeholder for Edit Row functionality
-          function editRow(rowId) {
-            alert(`Edit functionality for row ${rowId}`);
+          var editModal = document.getElementById("editModal");
+          var editCode = "";
+
+          function editRow(codeNew, account, amount, type) {
+            editModal.style.display = "block";
+            document.querySelector('#editModal h2').innerText = `Edit Transaction Records of Code ${codeNew}`;
+            document.querySelector('#editAccount').placeholder = account;
+            document.querySelector('#editAmount').placeholder = amount;
+            document.querySelector(`input[name="editType"][value="${type}"]`).checked = true;
+            editCode = codeNew;
           }
 
-          // Placeholder for Delete Row functionality
-          function deleteRow(rowId) {
-            const confirmation = confirm(`Are you sure you want to delete row ${rowId}?`);
-            if (confirmation) {
-              alert(`Row ${rowId} deleted!`);
+          var editCancelBtn = document.getElementById("editCancelBtn");
+          var editSubmitBtn = document.getElementById("editSubmitBtn");
+
+          editCancelBtn.onclick = function() {
+            editModal.style.display = "none";
+          }
+
+          editSubmitBtn.onclick = function() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "transactions.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+            var editAccountInput = document.querySelector('#editAccount');
+            var account = editAccountInput.value.trim() || editAccountInput.placeholder;
+
+            if (!/^[a-zA-Z0-9 ]+$/.test(account)) {
+              alert("Account must only contain letters, numbers, and spaces.");
+              event.preventDefault();
+              return;
             }
+
+            var editAmountInput = document.querySelector('#editAmount');
+            var amount = editAmountInput.value.trim() || editAmountInput.placeholder;
+
+            var amountFloat = parseFloat(amount);
+            if (isNaN(amountFloat) || amountFloat.toFixed(2) !== amount) {
+              alert("Amount must be a valid number with up to two decimal places.");
+              event.preventDefault();
+              return;
+            }
+
+            var type = document.querySelector('input[name="editType"]:checked').value;
+
+            var data = "editCode=" + encodeURIComponent(editCode) +
+              "&account=" + encodeURIComponent(account) +
+              "&amount=" + encodeURIComponent(amount) +
+              "&type=" + encodeURIComponent(type);
+
+            xhr.send(data);
           }
 
-          // Close dropdown when clicking outside
+          var delModal = document.getElementById("delModal");
+          var code = ""
+
+          function deleteRow(codeNew) {
+            document.querySelector('#delModal h3').innerText = `Are you sure you want to delete record with code ${codeNew}?`;
+            delModal.style.display = "block";
+            code = codeNew;
+          }
+
+          var delCancelBtn = document.getElementById("delCancelBtn");
+          var delSubmitBtn = document.getElementById("delSubmitBtn");
+
+          delCancelBtn.onclick = function() {
+            delModal.style.display = "none";
+          }
+
+          delSubmitBtn.onclick = function() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "transactions.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.send("delCode=" + encodeURIComponent(code));
+          }
+
           document.addEventListener("click", function(e) {
             document.querySelectorAll('.dropdown-menu').forEach(menu => {
               if (!menu.contains(e.target) && !menu.previousElementSibling.contains(e.target)) {

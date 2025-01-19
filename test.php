@@ -95,7 +95,7 @@
                     <th>Account</th>
                     <th>Amount</th>
                     <th>Type</th>
-                    <th></th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>

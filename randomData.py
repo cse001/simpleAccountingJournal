@@ -21,7 +21,7 @@ conn = sqlite3.connect(r'c:\Softwares\XAMPP\htdocs\formApplication\databases\jou
 cursor = conn.cursor()
 
 
-for _ in range(100):
+for _ in range(50):
     code = random_string(5)         
     account = random_account_name()      
     amount = random_amount()        
