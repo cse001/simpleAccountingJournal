@@ -90,6 +90,7 @@ nav a.active {
 
 input[type="text"],
 input[type="number"],
+input[type="date"],
 textarea {
     width: 100%;
     padding: 8px;
@@ -101,9 +102,7 @@ textarea {
 .radio-group {
     display: flex;
     align-items: center;
-    /* Align items in the center vertically */
     margin-bottom: 30px;
-    /* Spacing between options */
 }
 
 input[type="radio"] {

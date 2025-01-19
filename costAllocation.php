@@ -34,7 +34,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
     <main class="dashboard-content">
 
       <div class="transaction-head">
-        <h1>Cost Center Allocation Dashboard</h1>
+        <h1>Cost Center Dashboard</h1>
         <button class="new-record" id="openModalBtn">Add New Record</button>
 
         <div id="addModal" class="modal-overlay">
@@ -55,7 +55,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
               $codes = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
               if (in_array($code, $codes)) {
-                echo "<script>alert('Given code already exists in the database. Codes shoud be unique. Please try again.')</script>";
+                echo "<script>alert('Given transaction code already exists in the database. Codes shoud be unique. Please try again.')</script>";
               } else {
                 $stmt = $pdo->prepare("INSERT INTO costAllocation (code, costCenter, amount, remarks, type) VALUES (?, ?, ?, ?, ?)");
                 $stmt->execute([$code, $costCenter, $amount, $remarks, $type]);
@@ -67,7 +67,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
             <form method="POST" action="costAllocation.php">
 
               <br><label>Code:</label>
-              <input type="text" name="code" pattern="^[a-zA-Z0-9]+$" placeholder="Enter your code" required><br><br>
+              <input type="text" name="code" pattern="^[a-zA-Z0-9]+$" placeholder="Enter transaction code" required><br><br>
 
               <label>Cost Center:</label>
               <input type="text" name="costCenter" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter Cost Center" required><br>
@@ -79,7 +79,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
               <input type="text" name="type" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter type (Optional)"><br>
 
               <label>Remarks:</label>
-              <input type="text" name="remarks" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter remarks (Optional)"><br>
+              <input type="text" name="remarks" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter remarks (Optional)"><br><br>
 
               <button type="submit" name="submit" class="button-green">Submit</button>
               <button id="cancelBtn" class="button-red">Cancel</button>
@@ -183,11 +183,11 @@ $pdo = new PDO('sqlite:databases/journal.db');
             <label>Amount:</label>
             <input type="number" id="editAmount"><br>
 
-            <label>Remarks:</label>
-            <input type="text" id="editRemarks"><br>
-
             <label>Type:</label><br>
-            <input type="text" id="editType"><br><br>
+            <input type="text" id="editType"><br>
+
+            <label>Remarks:</label>
+            <input type="text" id="editRemarks"><br><br>
 
             <button id="editSubmitBtn" class="button-green">Submit</button>
             <button type="button" id="editCancelBtn" class="button-red">Cancel</button>

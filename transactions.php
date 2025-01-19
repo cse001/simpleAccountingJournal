@@ -54,10 +54,13 @@ $pdo = new PDO('sqlite:databases/journal.db');
               $codes = $stmt->fetchAll(PDO::FETCH_COLUMN);
               
               if (in_array($code, $codes)) {
-                echo "<script>alert('Given code already exists in the database. Codes shoud be unique. Please try again.')</script>";
+                echo "<script>alert('Given transaction code already exists in the database. Codes shoud be unique. Please try again.')</script>";
               } else {
                 $stmt = $pdo->prepare("INSERT INTO transactions (code, account, amount, type) VALUES (?, ?, ?, ?)");
                 $stmt->execute([$code, $account, $amount, $type]);
+
+                
+
                 header('Location: transactions.php');
               }
 
@@ -67,7 +70,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
             <form method="POST" action="transactions.php">
 
               <br><label>Code:</label>
-              <input type="text" name="code" pattern="^[a-zA-Z0-9]+$" placeholder="Enter your code" required><br><br>
+              <input type="text" name="code" pattern="^[a-zA-Z0-9]+$" placeholder="Enter transaction code" required><br><br>
 
               <label>Account:</label>
               <input type="text" name="account" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter account name" required><br>
@@ -165,7 +168,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
               <th>Code</th>
               <th>Account</th>
               <th>Amount</th>
-              <th>Type</th>
+              <th>Dr/Cr</th>
               <th></th>
             </tr>
           </thead>
@@ -209,7 +212,6 @@ $pdo = new PDO('sqlite:databases/journal.db');
               $stmt->execute([$account, $amount, $type, $code]);
 
               header('Location: transactions.php');
-              exit;
             }
             ?>
 
@@ -243,7 +245,6 @@ $pdo = new PDO('sqlite:databases/journal.db');
           $stmt->bindParam(':code', $code, PDO::PARAM_STR);
           $stmt->execute();
           header('Location: transactions.php');
-          exit;
         }
         ?>
 
