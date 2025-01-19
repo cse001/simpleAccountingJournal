@@ -59,6 +59,12 @@ $pdo = new PDO('sqlite:databases/journal.db');
               } else {
                 $stmt = $pdo->prepare("INSERT INTO invoice (invoice, type, date, amount, transType) VALUES (?, ?, ?, ?, ?)");
                 $stmt->execute([$code, $type, $date, $amount, $transType]);
+
+                $data = "SAR $amount $transType" . "ed as $type on $date";
+
+                $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Invoice', ?, ?)");
+                $stmt->execute([$data, $code]);
+
                 header('Location: invoice.php');
               }
 
@@ -183,6 +189,11 @@ $pdo = new PDO('sqlite:databases/journal.db');
               $stmt = $pdo->prepare("UPDATE invoice SET type = ?, date = ?, amount = ?, transType = ? WHERE invoice = ?");
               $stmt->execute([$type, $date, $amount, $transType, $code]);
 
+              $data = "Updated Record: SAR $amount $transType" . "ed as $type on $date";
+
+              $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Invoice', ?, ?)");
+              $stmt->execute([$data, $code]);
+
               header('Location: invoice.php');
             }
             ?>
@@ -219,6 +230,13 @@ $pdo = new PDO('sqlite:databases/journal.db');
           $stmt = $pdo->prepare("DELETE FROM invoice WHERE invoice = :code");
           $stmt->bindParam(':code', $code, PDO::PARAM_STR);
           $stmt->execute();
+
+          $date = date("d-m-Y");
+          $data = "Record Deleted";
+
+          $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Invoice', ?, ?)");
+          $stmt->execute([$data, $code]);
+
           header('Location: invoice.php');
         }
         ?>

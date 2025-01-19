@@ -56,10 +56,16 @@ $pdo = new PDO('sqlite:databases/journal.db');
               if (in_array($code, $codes)) {
                 echo "<script>alert('Given transaction code already exists in the database. Codes shoud be unique. Please try again.')</script>";
               } else {
+
                 $stmt = $pdo->prepare("INSERT INTO transactions (code, account, amount, type) VALUES (?, ?, ?, ?)");
                 $stmt->execute([$code, $account, $amount, $type]);
 
-                
+                $date = date("d-m-Y");
+                $direction = ($type == "Debit") ? "from" : "to";
+                $data = "SAR $amount $type" . "ed $direction $account on $date";
+
+                $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Transaction', ?, ?)");
+                $stmt->execute([$data, $code]);
 
                 header('Location: transactions.php');
               }
@@ -211,6 +217,13 @@ $pdo = new PDO('sqlite:databases/journal.db');
               $stmt = $pdo->prepare("UPDATE transactions SET account = ?, amount = ?, type = ? WHERE code = ?");
               $stmt->execute([$account, $amount, $type, $code]);
 
+              $date = date("d-m-Y");
+              $direction = ($type == "Debit") ? "from" : "to";
+              $data = "Updated Record: SAR $amount $type" . "ed $direction $account on $date";
+
+              $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Transaction', ?, ?)");
+              $stmt->execute([$data, $code]);
+
               header('Location: transactions.php');
             }
             ?>
@@ -244,6 +257,13 @@ $pdo = new PDO('sqlite:databases/journal.db');
           $stmt = $pdo->prepare("DELETE FROM transactions WHERE code = :code");
           $stmt->bindParam(':code', $code, PDO::PARAM_STR);
           $stmt->execute();
+
+          $date = date("d-m-Y");
+          $data = "Record Deleted";
+
+          $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Transaction', ?, ?)");
+          $stmt->execute([$data, $code]);
+
           header('Location: transactions.php');
         }
         ?>

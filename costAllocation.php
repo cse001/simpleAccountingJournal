@@ -59,6 +59,13 @@ $pdo = new PDO('sqlite:databases/journal.db');
               } else {
                 $stmt = $pdo->prepare("INSERT INTO costAllocation (code, costCenter, amount, remarks, type) VALUES (?, ?, ?, ?, ?)");
                 $stmt->execute([$code, $costCenter, $amount, $remarks, $type]);
+
+                $date = date("d-m-Y");
+                $data = "SAR $amount allocated to $costCenter on $date";
+
+                $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Cost Center Allocation', ?, ?)");
+                $stmt->execute([$data, $code]);
+
                 header('Location: costAllocation.php');
               }
             }
@@ -173,6 +180,12 @@ $pdo = new PDO('sqlite:databases/journal.db');
               $stmt = $pdo->prepare("UPDATE costAllocation SET costCenter = ?, amount = ?, remarks = ?, type = ? WHERE code = ?");
               $stmt->execute([$costCenter, $amount, $remarks, $type, $code]);
 
+              $date = date("d-m-Y");
+              $data = "Updated Record: SAR $amount allocated to $costCenter on $date";
+
+              $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Cost Center Allocation', ?, ?)");
+              $stmt->execute([$data, $code]);
+
               header('Location: costAllocation.php');
             }
             ?>
@@ -201,6 +214,12 @@ $pdo = new PDO('sqlite:databases/journal.db');
           $stmt = $pdo->prepare("DELETE FROM costAllocation WHERE code = :code");
           $stmt->bindParam(':code', $code, PDO::PARAM_STR);
           $stmt->execute();
+
+          $date = date("d-m-Y");
+          $data = "Record Deleted";
+
+          $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Cost Allocation', ?, ?)");
+          $stmt->execute([$data, $code]);
         }
         ?>
 
