@@ -89,9 +89,9 @@ def generateInvoice():
     except Exception as e:
         pass
 
-for i in range(100):
-    choice = random.randint(1, 3)
-    if choice == 1:
+for i in range(5):
+    choice = random.randint(1, 5)
+    if choice == 1 or choice == 4 or choice == 5:
         generateTransactions()
     elif choice == 2:
         generateCostAllocation()
