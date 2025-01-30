@@ -10,7 +10,7 @@ def random_string(length):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
 def random_account_name():
-    bank_names = ['Example Bank', 'First National Bank', 'Global Finance Bank', 'City Bank', 'Union Bank']
+    bank_names = ['Test Bank', 'First National Bank', 'Global Finance Bank', 'City Bank', 'Union Bank']
     account_types = ['Checking', 'Savings', 'Business', 'Investment', 'Loan']
     return f"{random.choice(bank_names)} {random.choice(account_types)}"
 
@@ -41,62 +41,47 @@ def random_date(start_date, end_date):
     random_days = random.randint(0, delta.days)
     return (start_date + timedelta(days=random_days)).strftime('%Y-%m-%d')
 
-def generateTransactions():
-    code = random_string(5)         
-    account = random_account_name()      
-    amount = random_amount()        
-    trans_type = random_type()
-    cursor.execute(f'''
-        INSERT INTO transactions (code, account, amount, type)
-        VALUES (?, ?, ?, ?)
-    ''', (code, account, amount, trans_type))
-    data = f"SAR {amount} {trans_type}ed {"from" if trans_type == "Debit" else "to"} {account} on {datetime.now().strftime("%d-%m-%Y")}"
-    cursor.execute("INSERT INTO master (entry, data, code) VALUES ('Transaction', ?, ?)", (data,code))
+codes = []
 
-def generateCostAllocation():
+for i in range(100):
 
-    code = random_string(5)         
-    cost_allocation_center = random_cost_center()      
-    amount = random_amount()        
-    remarks = random_remarks()      
-    trans_type = random_costAllocation_type()      
-    cursor.execute(f'''
-        INSERT INTO costAllocation (code, costCenter, amount, remarks, type)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (code, cost_allocation_center, amount, remarks, trans_type))
-    data = f"SAR {amount} allocated to {cost_allocation_center} on {datetime.now().strftime("%d-%m-%Y")}"
-    cursor.execute("INSERT INTO master (entry, data, code) VALUES ('Cost Center Allocation', ?, ?)", (data,code))
-
-def generateInvoice():
+    code = random_string(5)
+    if code in codes:
+        continue
+    codes.append(code)
+    account = random_account_name()
+    amount = random_amount()
+    inNum = "v" + str(random.randint(100, 999))
+    inType = random_invoice_type()
+    transType = random_type()
+    costCenter = random_cost_center()
+    remarks = random_remarks()
+    CASType = random_costAllocation_type()
 
     start_date = datetime.strptime('2023-01-01', '%Y-%m-%d')
     end_date = datetime.strptime('2025-01-01', '%Y-%m-%d')
-
-    invoice_type = random_invoice_type()
     date = random_date(start_date, end_date)
-    amount = random_amount()
-    trans_type = random_type()
 
-    try:
-        invoice = "v" + str(random.randint(100, 999))
-        cursor.execute('''
-        INSERT INTO invoice (invoice, type, date, amount, transType)
+    cursor.execute(f'''
+        INSERT INTO transactions (code, account, amount, type)
+        VALUES (?, ?, ?, ?)
+    ''', (code, account, amount, transType))
+
+    cursor.execute(f'''
+        INSERT INTO costAllocation (code, costCenter, amount, remarks, type)
         VALUES (?, ?, ?, ?, ?)
-        ''', (invoice, invoice_type, date, amount, trans_type))
+    ''', (code, costCenter, amount, remarks, CASType))
 
-        data = f"SAR {amount} {trans_type}ed as {invoice_type} on {datetime.now().strftime("%d-%m-%Y")}"
-        cursor.execute("INSERT INTO master (entry, data, code) VALUES ('Invoice', ?, ?)", (data, invoice))
-    except Exception as e:
-        pass
+    cursor.execute('''
+    INSERT INTO invoice (code, invoice, type, date, amount, transType)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ''', (code, inNum, inType, date, amount, transType))
 
-for i in range(5):
-    choice = random.randint(1, 5)
-    if choice == 1 or choice == 4 or choice == 5:
-        generateTransactions()
-    elif choice == 2:
-        generateCostAllocation()
-    elif choice == 3:
-        generateInvoice()
+    direction = "from" if transType == "Debit" else "to"
+
+    data = f"SAR {amount} {transType}ed {direction} {account} on {date} with invoice number {inNum} as {inType}. Allocated to cost center {costCenter}";
+    cursor.execute("INSERT INTO master (entry, data, code) VALUES ('New Record', ?, ?)", (data, code))
+    
 
 conn.commit()
 conn.close()

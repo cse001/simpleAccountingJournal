@@ -35,79 +35,6 @@ $pdo = new PDO('sqlite:databases/journal.db');
 
       <div class="transaction-head">
         <h1>Cost Center Dashboard</h1>
-        <button class="new-record" id="openModalBtn">Add New Record</button>
-
-        <div id="addModal" class="modal-overlay">
-          <div class="modal-content">
-            <h2>Add Cost Allocation Record</h2>
-
-            <?php
-            if (isset($_POST['submit'])) {
-
-              $code = $_POST['code'];
-              $costCenter = $_POST['costCenter'];
-              $amount = $_POST['amount'];
-              $type = $_POST['type'];
-              $remarks = $_POST['remarks'];
-
-              $stmt = $pdo->prepare("SELECT code FROM costAllocation");
-              $stmt->execute();
-              $codes = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-              if (in_array($code, $codes)) {
-                echo "<script>alert('Given transaction code already exists in the database. Codes shoud be unique. Please try again.')</script>";
-              } else {
-                $stmt = $pdo->prepare("INSERT INTO costAllocation (code, costCenter, amount, remarks, type) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$code, $costCenter, $amount, $remarks, $type]);
-
-                $date = date("d-m-Y");
-                $data = "SAR $amount allocated to $costCenter on $date";
-
-                $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Cost Center Allocation', ?, ?)");
-                $stmt->execute([$data, $code]);
-
-                header('Location: costAllocation.php');
-              }
-            }
-            ?>
-
-            <form method="POST" action="costAllocation.php">
-
-              <br><label>Code:</label>
-              <input type="text" name="code" pattern="^[a-zA-Z0-9]+$" placeholder="Enter transaction code" required><br><br>
-
-              <label>Cost Center:</label>
-              <input type="text" name="costCenter" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter Cost Center" required><br>
-
-              <label>Amount:</label>
-              <input type="number" step="0.01" name="amount" placeholder="Enter amount" required><br>
-
-              <label>Type:</label><br>
-              <input type="text" name="type" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter type (Optional)"><br>
-
-              <label>Remarks:</label>
-              <input type="text" name="remarks" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter remarks (Optional)"><br><br>
-
-              <button type="submit" name="submit" class="button-green">Submit</button>
-              <button id="cancelBtn" class="button-red">Cancel</button>
-
-            </form>
-          </div>
-        </div>
-
-        <script>
-          var modal = document.getElementById("addModal");
-          var openModalBtn = document.getElementById("openModalBtn");
-          var cancelBtn = document.getElementById("cancelBtn");
-
-          openModalBtn.onclick = function() {
-            modal.style.display = "block";
-          }
-          cancelBtn.onclick = function() {
-            modal.style.display = "none";
-          }
-        </script>
-
       </div>
 
       <div class="table-container">
@@ -122,7 +49,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
         $total_records = $stmt->fetchColumn();
         $total_pages = ceil($total_records / $records_per_page);
 
-        $stmt = $pdo->prepare("SELECT * FROM costAllocation LIMIT :limit OFFSET :offset");
+        $stmt = $pdo->prepare("SELECT * FROM costAllocation ORDER BY id DESC  LIMIT :limit OFFSET :offset");
         $stmt->bindValue(':limit', $records_per_page, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -211,7 +138,15 @@ $pdo = new PDO('sqlite:databases/journal.db');
         <?php
         if (isset($_POST['delCode'])) {
           $code = $_POST['delCode'];
+          $stmt = $pdo->prepare("DELETE FROM transactions WHERE code = :code");
+          $stmt->bindParam(':code', $code, PDO::PARAM_STR);
+          $stmt->execute();
+          $code = $_POST['delCode'];
           $stmt = $pdo->prepare("DELETE FROM costAllocation WHERE code = :code");
+          $stmt->bindParam(':code', $code, PDO::PARAM_STR);
+          $stmt->execute();
+          $code = $_POST['delCode'];
+          $stmt = $pdo->prepare("DELETE FROM invoice WHERE code = :code");
           $stmt->bindParam(':code', $code, PDO::PARAM_STR);
           $stmt->execute();
 
@@ -335,12 +270,18 @@ $pdo = new PDO('sqlite:databases/journal.db');
         </script>
 
         <div class="pagination">
-          <?php if ($page > 1): ?>
-            <a href="?page=<?php echo $page - 1; ?>">Previous</a>
-          <?php endif; ?>
-          <?php if ($page < $total_pages): ?>
-            <a href="?page=<?php echo $page + 1; ?>">Next</a>
-          <?php endif; ?>
+          <div class="start">
+            <?php if ($page > 1): ?>
+              <a href="?page=<?php echo 1; ?>">First Page</a>
+              <a href="?page=<?php echo $page - 1; ?>">Previous Page</a>
+            <?php endif; ?>
+          </div>
+          <div class="end">
+            <?php if ($page < $total_pages): ?>
+              <a href="?page=<?php echo $page + 1; ?>">Next Page</a>
+              <a href="?page=<?php echo $total_pages; ?>">Last Page</a>
+            <?php endif; ?>
+          </div>
         </div>
 
       </div>

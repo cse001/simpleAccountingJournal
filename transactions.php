@@ -47,12 +47,19 @@ $pdo = new PDO('sqlite:databases/journal.db');
               $code = $_POST['code'];
               $account = $_POST['account'];
               $amount = $_POST['amount'];
+              $inNum = $_POST['inNum'];
+              $inType = $_POST['inType'];
+              $date = $_POST['date'];
+              $costCenter = $_POST['costCenter'];
+              $remarks = $_POST['remarks'];
+              $costCenterType = $_POST['costCenterType'];
+
               $type = $_POST['type'];
 
               $stmt = $pdo->prepare("SELECT code FROM transactions");
               $stmt->execute();
               $codes = $stmt->fetchAll(PDO::FETCH_COLUMN);
-              
+
               if (in_array($code, $codes)) {
                 echo "<script>alert('Given transaction code already exists in the database. Codes shoud be unique. Please try again.')</script>";
               } else {
@@ -60,16 +67,20 @@ $pdo = new PDO('sqlite:databases/journal.db');
                 $stmt = $pdo->prepare("INSERT INTO transactions (code, account, amount, type) VALUES (?, ?, ?, ?)");
                 $stmt->execute([$code, $account, $amount, $type]);
 
-                $date = date("d-m-Y");
-                $direction = ($type == "Debit") ? "from" : "to";
-                $data = "SAR $amount $type" . "ed $direction $account on $date";
+                $stmt = $pdo->prepare("INSERT INTO costAllocation (code, costCenter, amount, remarks, type) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$code, $costCenter, $amount, $remarks, $costCenterType]);
 
-                $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Transaction', ?, ?)");
+                $stmt = $pdo->prepare("INSERT INTO invoice (code, invoice, type, date, amount, transType) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$code, $inNum, $inType, $date, $amount, $type]);
+
+                $direction = ($type == "Debit") ? "from" : "to";
+                $data = "SAR $amount $type" . "ed $direction $account on $date with invoice number $inNum as $inType. Allocated to cost center $costCenter";
+
+                $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('New Record', ?, ?)");
                 $stmt->execute([$data, $code]);
 
                 header('Location: transactions.php');
               }
-
             }
             ?>
 
@@ -79,19 +90,37 @@ $pdo = new PDO('sqlite:databases/journal.db');
               <input type="text" name="code" pattern="^[a-zA-Z0-9]+$" placeholder="Enter transaction code" required><br><br>
 
               <label>Account:</label>
-              <input type="text" name="account" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter account name" required><br>
+              <input type="text" name="account" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter account name" required>
 
               <label>Amount:</label>
-              <input type="number" step="0.01" name="amount" placeholder="Enter amount" required><br>
+              <input type="number" step="0.01" name="amount" placeholder="Enter amount" required>
 
-              <label>Transaction Type:</label><br>
+              <label>Invoice Number:</label>
+              <input type="text" name="inNum" pattern="^[a-zA-Z0-9]+$" placeholder="Enter invoice number">
+
+              <label>Invoice Type:</label>
+              <input type="text" name="inType" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter invoice type">
+
+              <label>Date:</label>
+              <input type="date" name="date" required>
+
+              <label>Cost Center:</label>
+              <input type="text" name="costCenter" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter cost center to allocate" required>
+
+              <label>Remarks:</label>
+              <input type="text" name="remarks" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter remarks (Optional)">
+
+              <label>Type:</label><br>
+              <input type="text" name="costCenterType" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter type (Optional)">
+
+              <label>Transaction Type:</label>
 
               <div class="radio-group">
                 <input type="radio" name="type" value="Debit" required>
-                <label>Debit</label><br>
+                <label>Debit</label>
 
                 <input type="radio" name="type" value="Credit" required>
-                <label>Credit</label><br>
+                <label>Credit</label>
 
               </div>
 
@@ -161,7 +190,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
         $total_records = $stmt->fetchColumn();
         $total_pages = ceil($total_records / $records_per_page);
 
-        $stmt = $pdo->prepare("SELECT * FROM transactions LIMIT :limit OFFSET :offset");
+        $stmt = $pdo->prepare("SELECT * FROM transactions ORDER BY id DESC LIMIT :limit OFFSET :offset");
         $stmt->bindValue(':limit', $records_per_page, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -255,6 +284,14 @@ $pdo = new PDO('sqlite:databases/journal.db');
         if (isset($_POST['delCode'])) {
           $code = $_POST['delCode'];
           $stmt = $pdo->prepare("DELETE FROM transactions WHERE code = :code");
+          $stmt->bindParam(':code', $code, PDO::PARAM_STR);
+          $stmt->execute();
+          $code = $_POST['delCode'];
+          $stmt = $pdo->prepare("DELETE FROM costAllocation WHERE code = :code");
+          $stmt->bindParam(':code', $code, PDO::PARAM_STR);
+          $stmt->execute();
+          $code = $_POST['delCode'];
+          $stmt = $pdo->prepare("DELETE FROM invoice WHERE code = :code");
           $stmt->bindParam(':code', $code, PDO::PARAM_STR);
           $stmt->execute();
 
@@ -368,12 +405,18 @@ $pdo = new PDO('sqlite:databases/journal.db');
         </script>
 
         <div class="pagination">
-          <?php if ($page > 1): ?>
-            <a href="?page=<?php echo $page - 1; ?>">Previous</a>
-          <?php endif; ?>
-          <?php if ($page < $total_pages): ?>
-            <a href="?page=<?php echo $page + 1; ?>">Next</a>
-          <?php endif; ?>
+          <div class="start">
+            <?php if ($page > 1): ?>
+              <a href="?page=<?php echo 1; ?>">First Page</a>
+              <a href="?page=<?php echo $page - 1; ?>">Previous Page</a>
+            <?php endif; ?>
+          </div>
+          <div class="end">
+            <?php if ($page < $total_pages): ?>
+              <a href="?page=<?php echo $page + 1; ?>">Next Page</a>
+              <a href="?page=<?php echo $total_pages; ?>">Last Page</a>
+            <?php endif; ?>
+          </div>
         </div>
 
       </div>

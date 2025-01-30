@@ -35,89 +35,9 @@ $pdo = new PDO('sqlite:databases/journal.db');
 
       <div class="transaction-head">
         <h1>Invoice Dashboard</h1>
-        <button class="new-record" id="openModalBtn">Add New Record</button>
-
-        <div id="addModal" class="modal-overlay">
-          <div class="modal-content">
-            <h2>Add Invoice Record</h2>
-
-            <?php
-            if (isset($_POST['submit'])) {
-
-              $code = $_POST['code'];
-              $type = $_POST['type'];
-              $date = $_POST['date'];
-              $amount = $_POST['amount'];
-              $transType = $_POST['transType'];
-
-              $stmt = $pdo->prepare("SELECT invoice FROM invoice");
-              $stmt->execute();
-              $codes = $stmt->fetchAll(PDO::FETCH_COLUMN);
-              
-              if (in_array($code, $codes)) {
-                echo "<script>alert('Given invoice code already exists in the database. Codes shoud be unique. Please try again.')</script>";
-              } else {
-                $stmt = $pdo->prepare("INSERT INTO invoice (invoice, type, date, amount, transType) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$code, $type, $date, $amount, $transType]);
-
-                $data = "SAR $amount $transType" . "ed as $type on $date";
-
-                $stmt = $pdo->prepare("INSERT INTO master (entry, data, code) VALUES ('Invoice', ?, ?)");
-                $stmt->execute([$data, $code]);
-
-                header('Location: invoice.php');
-              }
-
-            }
-            ?>
-
-            <form method="POST" action="invoice.php">
-
-              <br><label>Code:</label>
-              <input type="text" name="code" pattern="^[a-zA-Z0-9]+$" placeholder="Enter invoice code" required><br><br>
-
-              <label>Type:</label>
-              <input type="text" name="type" pattern="^[a-zA-Z0-9 ]+$" placeholder="Enter account name" required><br>
-
-              <label>Date:</label>
-              <input type="date" name="date" required><br>
-
-              <label>Amount:</label>
-              <input type="number" step="0.01" name="amount" placeholder="Enter amount" required><br>
-
-              <label>Transaction Type:</label><br>
-
-              <div class="radio-group">
-                <input type="radio" name="transType" value="Debit" required>
-                <label>Debit</label><br>
-
-                <input type="radio" name="transType" value="Credit" required>
-                <label>Credit</label><br>
-
-              </div>
-
-              <button type="submit" name="submit" class="button-green">Submit</button>
-              <button id="cancelBtn" class="button-red">Cancel</button>
-
-            </form>
-          </div>
-        </div>
-
-        <script>
-          var modal = document.getElementById("addModal");
-          var openModalBtn = document.getElementById("openModalBtn");
-          var cancelBtn = document.getElementById("cancelBtn");
-
-          openModalBtn.onclick = function() {
-            modal.style.display = "block";
-          }
-          cancelBtn.onclick = function() {
-            modal.style.display = "none";
-          }
-        </script>
 
       </div>
-      
+
 
       <div class="table-container">
 
@@ -131,7 +51,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
         $total_records = $stmt->fetchColumn();
         $total_pages = ceil($total_records / $records_per_page);
 
-        $stmt = $pdo->prepare("SELECT * FROM invoice LIMIT :limit OFFSET :offset");
+        $stmt = $pdo->prepare("SELECT * FROM invoice ORDER BY id DESC LIMIT :limit OFFSET :offset");
         $stmt->bindValue(':limit', $records_per_page, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -141,6 +61,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
           <thead>
             <tr>
               <th>Number</th>
+              <th>Code</th>
               <th>Invoice</th>
               <th>Type</th>
               <th>Date</th>
@@ -155,6 +76,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) { ?>
               <tr class="row-container">
                 <td><?= $counter ?></td>
+                <td><?= $row['code'] ?></td>
                 <td><?= $row['invoice'] ?></td>
                 <td><?= $row['type'] ?></td>
                 <td><?= $row['date'] ?></td>
@@ -162,8 +84,8 @@ $pdo = new PDO('sqlite:databases/journal.db');
                 <td class="edit-row"><span class="status <?= $row['transType'] ?>"><?= $row['transType'] ?></span></td>
                 <td><button class="action-btn" onclick="toggleMenu(this)">⋮</button>
                   <div class="dropdown-menu">
-                    <a onclick="editRow('<?= $row['invoice'] . '\',\'' . $row['type'] . '\',\'' . $row['date'] . '\',\'' . $row['amount'] . '\',\'' . $row['transType'] ?>')">Edit</a>
-                    <a onclick="deleteRow('<?= $row['invoice'] ?>')">Delete</a>
+                    <a onclick="editRow('<?= $row['code'] . '\',\'' . $row['type'] . '\',\'' . $row['date'] . '\',\'' . $row['amount'] . '\',\'' . $row['transType'] ?>')">Edit</a>
+                    <a onclick="deleteRow('<?= $row['code'] ?>')">Delete</a>
                   </div>
                 </td>
               </tr>
@@ -186,7 +108,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
               $amount = $_POST['amount'];
               $transType = $_POST['transType'];
 
-              $stmt = $pdo->prepare("UPDATE invoice SET type = ?, date = ?, amount = ?, transType = ? WHERE invoice = ?");
+              $stmt = $pdo->prepare("UPDATE invoice SET type = ?, date = ?, amount = ?, transType = ? WHERE code = ?");
               $stmt->execute([$type, $date, $amount, $transType, $code]);
 
               $data = "Updated Record: SAR $amount $transType" . "ed as $type on $date";
@@ -227,7 +149,15 @@ $pdo = new PDO('sqlite:databases/journal.db');
         <?php
         if (isset($_POST['delCode'])) {
           $code = $_POST['delCode'];
-          $stmt = $pdo->prepare("DELETE FROM invoice WHERE invoice = :code");
+          $stmt = $pdo->prepare("DELETE FROM transactions WHERE code = :code");
+          $stmt->bindParam(':code', $code, PDO::PARAM_STR);
+          $stmt->execute();
+          $code = $_POST['delCode'];
+          $stmt = $pdo->prepare("DELETE FROM costAllocation WHERE code = :code");
+          $stmt->bindParam(':code', $code, PDO::PARAM_STR);
+          $stmt->execute();
+          $code = $_POST['delCode'];
+          $stmt = $pdo->prepare("DELETE FROM invoice WHERE code = :code");
           $stmt->bindParam(':code', $code, PDO::PARAM_STR);
           $stmt->execute();
 
@@ -346,12 +276,18 @@ $pdo = new PDO('sqlite:databases/journal.db');
         </script>
 
         <div class="pagination">
-          <?php if ($page > 1): ?>
-            <a href="?page=<?php echo $page - 1; ?>">Previous</a>
-          <?php endif; ?>
-          <?php if ($page < $total_pages): ?>
-            <a href="?page=<?php echo $page + 1; ?>">Next</a>
-          <?php endif; ?>
+          <div class="start">
+            <?php if ($page > 1): ?>
+              <a href="?page=<?php echo 1; ?>">First Page</a>
+              <a href="?page=<?php echo $page - 1; ?>">Previous Page</a>
+            <?php endif; ?>
+          </div>
+          <div class="end">
+            <?php if ($page < $total_pages): ?>
+              <a href="?page=<?php echo $page + 1; ?>">Next Page</a>
+              <a href="?page=<?php echo $total_pages; ?>">Last Page</a>
+            <?php endif; ?>
+          </div>
         </div>
 
       </div>

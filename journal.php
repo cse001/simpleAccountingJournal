@@ -49,7 +49,7 @@ $pdo = new PDO('sqlite:databases/journal.db');
         $total_records = $stmt->fetchColumn();
         $total_pages = ceil($total_records / $records_per_page);
 
-        $stmt = $pdo->prepare("SELECT * FROM master LIMIT :limit OFFSET :offset");
+        $stmt = $pdo->prepare("SELECT * FROM master ORDER BY id DESC LIMIT :limit OFFSET :offset");
         $stmt->bindValue(':limit', $records_per_page, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -80,13 +80,19 @@ $pdo = new PDO('sqlite:databases/journal.db');
         </table>
       </div>
       <div class="pagination">
+        <div class="start">
           <?php if ($page > 1): ?>
-            <a href="?page=<?php echo $page - 1; ?>">Previous</a>
-          <?php endif; ?>
-          <?php if ($page < $total_pages): ?>
-            <a href="?page=<?php echo $page + 1; ?>">Next</a>
+            <a href="?page=<?php echo 1; ?>">First Page</a>
+            <a href="?page=<?php echo $page - 1; ?>">Previous Page</a>
           <?php endif; ?>
         </div>
+        <div class="end">
+          <?php if ($page < $total_pages): ?>
+            <a href="?page=<?php echo $page + 1; ?>">Next Page</a>
+            <a href="?page=<?php echo $total_pages; ?>">Last Page</a>
+          <?php endif; ?>
+        </div>
+      </div>
     </main>
   </div>
 </body>
